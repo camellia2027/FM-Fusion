@@ -59,16 +59,17 @@ Install Open3D from its source code.([Install Tutorial](https://www.open3d.org/d
 ```bash
 git clone https://github.com/isl-org/Open3D
 cd Open3D
-make build & cd build
+mkdir build & cd build
 cmake -DBUILD_SHARED_LIBS=ON ..
 make -j12
 sudo make install
 ```
 Follow the official tutorials to install [OpenCV](https://docs.opencv.org/4.x/d7/d9f/tutorial_linux_install.html), [GLOG](https://github.com/google/glog), [jsoncpp](https://github.com/open-source-parsers/jsoncpp/blob/master/README.md).
+To make it compatible with ROS, please install ```OpenCV 3.4.xx```.
 
 Compile FM-Fusion,
 ```bash
-mkdir build & cd build
+mkdir build && cd build
 cmake .. -DINSTALL_FMFUSION=ON
 make -j12
 make install
@@ -77,7 +78,7 @@ make install
 Install the ROS node program, which renders the semantic instance map in Rviz. Install ROS platform following its [official guidance](http://wiki.ros.org/noetic/Installation/Ubuntu). Then, build the ros node we provide,
 ```bash
 git submodule update --init --recursive
-cd catkin_ws & catkin_make
+cd catkin_ws && catkin_make
 source devel/setup.bash
 ```
 
@@ -105,6 +106,8 @@ roslaunch sgloop_ros semantic_mapping.launch
 </p>
 
 It should incremental reconstruct the semantic map and render the results on Rviz. At the end of the sequence, the program save the output results, where the output format is illustrated in the [data format](doc/DATA.md).
+
+***Tips***: If you are running the program on a remote server, you can utilize the [ROS across machine](http://wiki.ros.org/ROS/Tutorials/MultipleMachines) function. After set the ```rosmaster``` following the ROS tutorial, you can launch ```visualize.launch``` at your local machine and ```semantic_mapping.launch``` at the server. So, you can still visualize the result on your local machine.
 
 #### b. Run without visualization.
 
