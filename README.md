@@ -60,7 +60,7 @@ Install dependency packages from Ubuntu Source
 sudo apt-get install libboost-dev libomp-dev libeigen3-dev
 ```
 Install Open3D from its source code.([Install Tutorial](https://www.open3d.org/docs/release/compilation.html#compilation))
-```bash
+```
 git clone https://github.com/isl-org/Open3D
 cd Open3D
 mkdir build && cd build
