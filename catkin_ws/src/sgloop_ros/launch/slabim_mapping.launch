@@ -2,11 +2,12 @@
   <!-- SET CONFIGURATION HERE -->
   <!-- <arg name="dataroot" value="/data2/sample_data/sgslam"/> -->
   <arg name="dataroot" value="/data2/slabim"/>
-  <arg name="sequence_name" default="ab0205_00a"/>
+  <arg name="sequence_name" default="xb0101_02"/>
 
   <!-- global settings  -->
   <arg name="cfg_file" value="$(find sgloop_ros)/../../../config/slabim.yaml"/>
   <arg name="verbose_level" value="2"/>
+  <!-- <arg name="output_folder" value="$(arg dataroot)/val"/> -->
   <arg name="output_folder" value="$(arg dataroot)/output/online_mapping"/>
 
   <group ns="viz"> 
@@ -28,7 +29,7 @@
     <param name="local_agent" value="agentA"/>
 <!-- <param name="association_name" value="data_association.txt"/> -->
     <param name="association_name" value=""/>
-    <param name="max_frames" value="100"/>
+    <param name="max_frames" value="70"/>
     <param name="frame_gap" value="1"/>
     <param name="visualization" value="1"/>
     <param name="o3d_verbose_level" value="$(arg verbose_level)"/>
