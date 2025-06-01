@@ -34,13 +34,13 @@ Mapping:
   merge_iou: 0.4
   realtime_merge_floor: 1
   recent_window_size: 240
-  update_period: 20
+  update_period: 1
 
   # Bayesian fusion
   bayesian_semantic_likelihood: "" # To enable it, set it to the likelihood matrix path
 
   # export
-  shape_min_points: 50 # export and bbox extract
+  shape_min_points: 20 # export and bbox extract
 
   save_da_dir: "" #"/data2/sgslam/output/da"
 # 

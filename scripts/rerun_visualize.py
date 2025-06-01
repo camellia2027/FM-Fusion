@@ -1,4 +1,4 @@
-import os 
+import os, json
 import numpy as np
 import cv2
 import open3d as o3d
@@ -64,7 +64,7 @@ def render_node_centers(entity_name:str,
 def render_node_bboxes(entity_name:str,
                        nodes:dict,
                        show_labels:bool=True,
-                       radius=0.01):
+                       radius=0.001):
     
     for idx, node in nodes.items():
         rot = node.box.R
@@ -172,11 +172,14 @@ def render_semantic_scene_graph(scene_name:str,
                                 scene_graph:dict,
                                 voxel_size:float=0.05,
                                 origin:np.ndarray=np.eye(4),
-                                box:bool=False
+                                box:bool=False,
+                                pcd_color=None
                                 ):
+    print('point cloud color: ', pcd_color)
     render_point_cloud(scene_name+'/global_cloud',
                        scene_graph['global_cloud'],
-                       voxel_size)
+                       voxel_size,
+                       color=pcd_color)
     render_node_centers(scene_name+'/centroids',
                         scene_graph['nodes'])
     
@@ -260,6 +263,7 @@ def get_parser_args():
     parser.add_argument('--seq_dir', type=str, default=None,
                         help='only used to load selected frame')
     parser.add_argument('--frame_name', type=str, default=None,)
+    parser.add_argument('--pcd_color', type=json.loads, help='point cloud color')
     parser.add_argument('--remote_rerun_add', type=str, help='IP:PORT')
     parser.add_argument('--voxel_size', type=float, default=0.02,
                         help='voxel size for downsampling')    
@@ -286,7 +290,8 @@ if __name__=='__main__':
                                 src_sg,
                                 args.voxel_size,
                                 np.eye(4),
-                                True)
+                                True,
+                                args.pcd_color)
     if args.frame_name is not None:
         assert args.seq_dir is not None, \
             'require a sequence dir to load selected frame'

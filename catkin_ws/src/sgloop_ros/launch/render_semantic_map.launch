@@ -1,19 +1,17 @@
 <launch>
   <!-- <arg name="result_folder" value="/data2/sample_data/output"/> -->
-  <!-- <arg name="agentA_scene" value="ab0201_03a"/> -->
-  <arg name="cfg_file" value="$(find sgloop_ros)/../../../config/slabim.yaml"/>
-  <!-- <arg name="result_folder" value="/data2/slabim/val"/> -->
-  <arg name="result_folder" value="/data2/slabim/val"/>
-  <arg name="agentA_scene" default="xb0101_00"/>
+  <arg name="cfg_file" value="$(find sgloop_ros)/../../../config/scannet.yaml"/>
+  <arg name="result_folder" value="/data2/ScanNet/output/online_mapping"/>
+  <arg name="agentA_scene" value="scene0025_00"/>
 
   <group ns="viz">
     <param name="edge_width" value="0.03"/>
     <param name="edge_color/r" value="0.0"/>
     <param name="edge_color/g" value="1.0"/>
     <param name="edge_color/b" value="1.0"/>
-    <param name="centroid_size" value="0.5"/>
-    <param name="centroid_v_offset" value="12.0"/>
-    <param name="annotation_size" value="0.7"/>
+    <param name="centroid_size" value="0.2"/>
+    <param name="centroid_v_offset" value="3.0"/>
+    <param name="annotation_size" value="0.3"/>
     <param name="annotation_v_offset" value="0.3"/>
   </group>
 

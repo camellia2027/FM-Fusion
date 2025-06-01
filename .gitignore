@@ -15,6 +15,7 @@ tmp
 hydra_lcd
 images
 data
+output
 
 # Ignore files 
 *.pyc
