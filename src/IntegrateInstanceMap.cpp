@@ -71,7 +71,11 @@ int main(int argc, char *argv[])
         if(rgbd_table.size()>4000) return 0;
     }
     else{
-        bool read_ret = fmfusion::IO::construct_preset_frame_table(root_dir,association_name,trajectory_name,rgbd_table,pose_table);
+        bool read_ret = fmfusion::IO::construct_preset_frame_table(root_dir,
+                                                                association_name,
+                                                                trajectory_name,
+                                                                rgbd_table,
+                                                                pose_table);
         if(!read_ret) return 0;
     }
 

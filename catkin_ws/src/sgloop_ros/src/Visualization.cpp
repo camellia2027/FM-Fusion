@@ -300,19 +300,21 @@ namespace Visualization
         
     }
 
-    bool render_path (const Eigen::Matrix4d &poses, nav_msgs::Path &path_msg,
+    bool render_path (const Eigen::Matrix4d &pose, nav_msgs::Path &path_msg,
                     ros::Publisher pub,std::string frame_id, int sequence_id)
     {
         path_msg.header.frame_id = frame_id;
+        path_msg.header.seq = sequence_id;
+        path_msg.header.stamp = ros::Time::now();
 
         geometry_msgs::PoseStamped pose_stamped;
         pose_stamped.header.frame_id = frame_id;
         pose_stamped.header.seq = sequence_id;
         pose_stamped.header.stamp = ros::Time::now();
-        pose_stamped.pose.position.x = poses(0,3);
-        pose_stamped.pose.position.y = poses(1,3);
-        pose_stamped.pose.position.z = poses(2,3);
-        Eigen::Quaterniond q(poses.block<3,3>(0,0));
+        pose_stamped.pose.position.x = pose(0,3);
+        pose_stamped.pose.position.y = pose(1,3);
+        pose_stamped.pose.position.z = pose(2,3);
+        Eigen::Quaterniond q(pose.block<3,3>(0,0));
         pose_stamped.pose.orientation.x = q.x();
         pose_stamped.pose.orientation.y = q.y();
         pose_stamped.pose.orientation.z = q.z();
@@ -384,6 +386,7 @@ namespace Visualization
         else{
             viz_centroids = instance_centroids;
         }
+        ROS_INFO("Render %ld instances", instance_centroids.size());
 
         // Render centroids
         Visualization::instance_centroids(viz_centroids, 

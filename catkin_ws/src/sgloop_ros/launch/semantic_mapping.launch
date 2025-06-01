@@ -1,10 +1,11 @@
 <launch>
   <!-- SET CONFIGURATION HERE -->
-  <arg name="dataroot" value="/data2/sample_data/sgslam"/>
-  <arg name="sequence_name" default="ab0201_03a"/>
+  <arg name="dataroot" value="/data2/ScanNet"/>
+  <arg name="sequence_name" default="scene0025_00"/>
+  <!-- <arg name="sequence_name" default="ab0201_03a"/> -->
 
   <!-- global settings  -->
-  <arg name="cfg_file" value="$(find sgloop_ros)/../../../config/realsense.yaml"/>
+  <arg name="cfg_file" value="$(find sgloop_ros)/../../../config/scannet.yaml"/>
   <arg name="verbose_level" value="0"/>
   <arg name="output_folder" value="$(arg dataroot)/output/online_mapping"/>
 
@@ -18,17 +19,19 @@
       <param name="centroid_color/g" value="0.0"/>
       <param name="centroid_color/b" value="0.0"/>
       <param name="annotation_size" value="0.3"/>
+      <param name="centroid_v_offset" value="0.0"/>
+      <param name="annotation_v_offset" value="0.3"/>
   </group>
 
   <node pkg="sgloop_ros" name="agentA" type="MappingNode" output="screen" clear_params="true">
     <param name="cfg_file" value="$(arg cfg_file)"/>
     <param name="output_folder" value="$(arg output_folder)"/>
-    <param name="active_sequence_dir" value="$(arg dataroot)/scans/$(arg sequence_name)"/>
+    <param name="active_sequence_dir" value="$(arg dataroot)/val/$(arg sequence_name)"/>
     <param name="local_agent" value="agentA"/>
     <!-- <param name="association_name" value="data_association.txt"/> -->
     <param name="association_name" value=""/>
-    <param name="max_frames" value="100"/>
-    <param name="frame_gap" value="2"/>
+    <param name="max_frames" value="500"/>
+    <param name="frame_gap" value="5"/>
     <param name="visualization" value="1"/>
     <param name="o3d_verbose_level" value="$(arg verbose_level)"/>
   </node>

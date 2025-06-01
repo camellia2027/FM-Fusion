@@ -44,6 +44,7 @@ int main(int argc, char **argv)
     int o3d_verbose_level = nh_private.param("o3d_verbose_level", 2);
     int visualization = nh_private.param("visualization", 0);
     int max_frames = nh_private.param("max_frames", 5000);
+    bool debug = nh_private.param("debug", false);
     ROS_WARN("MappingNode started");
 
     // Inits
@@ -132,8 +133,16 @@ int main(int argc, char **argv)
         prev_frame_id = seq_id;
 
         { // Viz poses
-            Visualization::render_camera_pose(pose_table[k], viz.camera_pose, LOCAL_AGENT, seq_id);
-            Visualization::render_path(pose_table[k], viz.path_msg, viz.path, LOCAL_AGENT, seq_id);
+            Visualization::render_camera_pose(pose_table[k], 
+                                            viz.camera_pose, 
+                                            LOCAL_AGENT, 
+                                            seq_id);
+            Visualization::render_path(pose_table[k], 
+                                        viz.path_msg, 
+                                        viz.path, 
+                                        LOCAL_AGENT, 
+                                        seq_id);
+            
         }
 
         if(viz.pred_image.getNumSubscribers()>0) Visualization::render_rgb_detections(color, 
@@ -143,7 +152,7 @@ int main(int argc, char **argv)
 
         {// Viz 3D
             Visualization::render_semantic_map(semantic_mapping->export_global_pcd(true,0.05),
-                                                    semantic_mapping->export_instance_centroids(0),
+                                                    semantic_mapping->export_instance_centroids(0, debug),
                                                     semantic_mapping->export_instance_annotations(0),
                                                     viz,
                                                     LOCAL_AGENT);
@@ -158,7 +167,7 @@ int main(int argc, char **argv)
         // semantic_mapping->merge_overlap_instances();
 
         Visualization::render_semantic_map(semantic_mapping->export_global_pcd(true,0.05),
-                            semantic_mapping->export_instance_centroids(0),
+                            semantic_mapping->export_instance_centroids(0, debug),
                             semantic_mapping->export_instance_annotations(0),
                             viz,
                             LOCAL_AGENT);

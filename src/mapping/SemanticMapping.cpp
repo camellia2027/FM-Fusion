@@ -40,7 +40,10 @@ void SemanticMapping::integrate(const int &frame_id,
         timer_da.Start();
         Eigen::VectorXi matches;
         std::vector<std::pair<InstanceId,InstanceId>> ambiguous_pairs;
-        int count_m = data_association(detections, active_instances, matches, ambiguous_pairs); // (n_det,)
+        int count_m = data_association(detections, 
+                                        active_instances, 
+                                        matches, 
+                                        ambiguous_pairs); // (n_det,)
         timer_da.Stop();
 
         timer_integrate.Start();
@@ -62,7 +65,8 @@ void SemanticMapping::integrate(const int &frame_id,
                 auto matched_instance = instance_map[matches(k_)];
                 matched_instance->integrate(frame_id,masked_rgbd,pose.inverse());
                 matched_instance->update_label(detections[k_]);
-                matched_instance->update_point_cloud(frame_id,mapping_config.update_period);
+                matched_instance->update_point_cloud(frame_id,
+                                                    mapping_config.update_period);
             
                 if(bayesian_label){
                     Eigen::VectorXf probability_vector;
@@ -121,8 +125,10 @@ void SemanticMapping::integrate(const int &frame_id,
 
 }
 
-std::vector<InstanceId> SemanticMapping::search_active_instances(
-    const O3d_Cloud_Ptr &depth_cloud, const Eigen::Matrix4d &pose, const double search_radius)
+std::vector<InstanceId> 
+SemanticMapping::search_active_instances(const O3d_Cloud_Ptr &depth_cloud, 
+                                        const Eigen::Matrix4d &pose, 
+                                        const double search_radius)
 {
     std::vector<InstanceId> active_instances;
     const size_t MIN_UNITS= 1;
@@ -274,7 +280,8 @@ int SemanticMapping::data_association(const std::vector<DetectionPtr> &detection
 
     // std::cout<<iou<<std::endl;   
     // std::cout<<assignment<<std::endl;
-    o3d_utility::LogInfo("{}/({},{}) associations out of detections and active instances.",count,K,M);
+    o3d_utility::LogInfo("{} associations out of {} detections and {} active instances.",
+                        count,K,M);
 
     return count;
 }
@@ -645,18 +652,24 @@ std::shared_ptr<open3d::geometry::PointCloud> SemanticMapping::export_global_pcd
     return global_pcd;
 }
 
-std::vector<Eigen::Vector3d> SemanticMapping::export_instance_centroids(int earliest_frame_id)const
+std::vector<Eigen::Vector3d> 
+SemanticMapping::export_instance_centroids(int earliest_frame_id,
+                                            bool verbose)const
 {
     std::vector<Eigen::Vector3d> centroids;
     std::stringstream msg;
     for(const auto &inst:instance_map){
         int tmp_idx = inst.second->frame_id_;
-        if(inst.second->get_cloud_size()>mapping_config.shape_min_points &&
+        int pts_size = inst.second->get_cloud_size();
+        if(pts_size>mapping_config.shape_min_points &&
             tmp_idx>=earliest_frame_id){
             centroids.emplace_back(inst.second->centroid);
-            msg<<inst.second->frame_id_<<",";
         }
+        msg<<inst.second->frame_id_
+            <<"("<< pts_size<<")"
+            <<",";
     }
+    if(verbose) std::cout<<msg.str()<<"\n";
     o3d_utility::LogInfo("{:d} instance centroids are exported.",centroids.size());
     return centroids;
 }

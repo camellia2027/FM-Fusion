@@ -187,8 +187,10 @@ bool LoadPredictions(const std::string &folder_path, const std::string &frame_na
 
 
 std::shared_ptr<cv::Mat> RenderDetections(const std::shared_ptr<cv::Mat> &rgb_img,
-    const std::vector<DetectionPtr> &detections, const std::unordered_map<InstanceId,CvMatPtr> &instances_mask,
-    const Eigen::VectorXi &matches, const std::unordered_map<InstanceId,Eigen::Vector3d> &instance_colors)
+                                        const std::vector<DetectionPtr> &detections, 
+                                        const std::unordered_map<InstanceId,CvMatPtr> &instances_mask,
+                                        const Eigen::VectorXi &matches, 
+                                        const std::unordered_map<InstanceId,Eigen::Vector3d> &instance_colors)
 {
     auto detection_img = std::make_shared<cv::Mat>(rgb_img->clone());
     auto detection_mask = std::make_shared<cv::Mat>(cv::Mat::zeros(rgb_img->rows, rgb_img->cols, CV_8UC3));
@@ -202,11 +204,19 @@ std::shared_ptr<cv::Mat> RenderDetections(const std::shared_ptr<cv::Mat> &rgb_im
         else if(matches(k)<0) box_color = cv::Scalar(0,0,255);  // invalid
         else box_color = cv::Scalar(255,0,0); // create new
 
-        cv::rectangle(*detection_img, cv::Point(detection->bbox_.u0,detection->bbox_.v0),
-            cv::Point(detection->bbox_.u1,detection->bbox_.v1), box_color, 1);
+        cv::rectangle(*detection_img, 
+                    cv::Point(detection->bbox_.u0,detection->bbox_.v0),
+                    cv::Point(detection->bbox_.u1,detection->bbox_.v1), 
+                    box_color, 
+                    1);
         std::string label_score_str = detection->extract_label_string();
-        cv::putText(*detection_img, label_score_str, cv::Point(detection->bbox_.u0+1,detection->bbox_.v0+10), 
-            cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0,0,0), 1);
+        cv::putText(*detection_img, 
+                    label_score_str, 
+                    cv::Point(detection->bbox_.u0+1,detection->bbox_.v0+10), 
+                    cv::FONT_HERSHEY_SIMPLEX, 
+                    0.5, 
+                    cv::Scalar(255,255,255), 
+                    1);
         k++;
 
         // detection-wise color

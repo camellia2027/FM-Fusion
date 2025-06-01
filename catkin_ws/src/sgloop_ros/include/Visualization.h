@@ -95,9 +95,11 @@ namespace Visualization
     bool render_camera_pose(const Eigen::Matrix4d &pose, ros::Publisher pub, 
                             std::string frame_id="world", int sequence_id = 0);
 
-    bool render_path(const Eigen::Matrix4d &poses, 
+    bool render_path(const Eigen::Matrix4d &pose, 
                     nav_msgs::Path &path_msg,
-                    ros::Publisher pub, std::string frame_id="world", int sequence_id = 0);
+                    ros::Publisher pub, 
+                    std::string frame_id="world", 
+                    int sequence_id = 0);
 
     bool render_path(const std::vector<Eigen::Matrix4d> &T_a_camera,
                     const Eigen::Matrix4d & T_b_a,
