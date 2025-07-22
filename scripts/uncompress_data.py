@@ -4,7 +4,7 @@ import zipfile
 
 if __name__=='__main__':
     ############## SET Configurations Here ##############
-    dataroot = '/data2/sample_data/ScanNet'
+    dataroot = '/home/wuxin/Desktop/FM-Fusion/data/ScanNet'
     DELETE_ZIP_FILE = True
     #####################################################
 

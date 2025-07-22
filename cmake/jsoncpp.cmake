@@ -1,3 +1,5 @@
+# Prefer the locally compiled jsoncpp (1.9.7) over system version (1.7.4)
+set(CMAKE_PREFIX_PATH "/usr/local" ${CMAKE_PREFIX_PATH})
 find_package(jsoncpp REQUIRED)
 include_directories(${jsoncpp_INCLUDE_DIRS})
 list(APPEND ALL_TARGET_LIBRARIES jsoncpp_lib)

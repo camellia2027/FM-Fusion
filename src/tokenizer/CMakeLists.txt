@@ -10,6 +10,6 @@ add_library(tokenizer SHARED
         bert_tokenizer.cc
         )
 target_link_libraries(tokenizer PRIVATE spdlog::spdlog ${LIB_UTF8PROC} glog::glog)
-set_target_properties(tokenizer PROPERTIES CXX_STANDARD 17)
+set_target_properties(tokenizer PROPERTIES CXX_STANDARD 14)
 
 

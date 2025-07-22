@@ -37,7 +37,7 @@ Mapping:
   update_period: 20
 
   # Bayesian fusion
-  bayesian_semantic_likelihood: "/home/cliuci/code_ws/OpensetFusion/measurement_model/bayesian_model.txt"
+  bayesian_semantic_likelihood: "/home/wuxin/Desktop/FM-Fusion/measurement_model/bayesian_model.txt"
 
   # export
   shape_min_points: 500 # export and bbox extract

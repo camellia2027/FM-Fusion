@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.18)
 project(fmfusion LANGUAGES CXX VERSION 1.0)
 
 set(CMAKE_BUILD_TYPE Release)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 # Dependencies
@@ -40,7 +40,7 @@ if (LOOP_DETECTION)
     include(${PROJECT_ROOT_DIR}/cmake/gtsam.cmake)
     include_directories("thirdparty/Kimera-RPGO/include")
     include_directories("thirdparty/extensions")
-    set(CMAKE_PREFIX_PATH "/home/cliuci/tools/libtorch")
+    set(CMAKE_PREFIX_PATH "/home/wuxin/tools/libtorch")
     set(LIB_UTF8PROC "/usr/local/lib/libutf8proc.so")
 
     add_subdirectory(tokenizer)
