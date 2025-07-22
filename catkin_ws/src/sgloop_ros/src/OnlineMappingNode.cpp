@@ -7,16 +7,12 @@
 #include <tf/transform_broadcaster.h>
 #include "tf/transform_listener.h"
 
-// Message filters for time synchronization
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
-
 // ROS messages
 #include <sensor_msgs/Image.h>
-#include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Pose.h>
 #include <std_msgs/String.h>
 #include <std_msgs/Header.h>
+#include "sgloop_ros/SyncedFrame.h"
 
 #include <open3d/Open3D.h>
 #include <opencv2/opencv.hpp>
@@ -35,27 +31,9 @@ class OnlineMappingNode
 private:
     ros::NodeHandle nh_;
     ros::NodeHandle nh_private_;
-    
-    // Message filters for time synchronization (only for images)
-    message_filters::Subscriber<sensor_msgs::Image> rgb_sub_;
-    message_filters::Subscriber<sensor_msgs::Image> depth_sub_;
-    message_filters::Subscriber<sensor_msgs::Image> mask_sub_;
 
-    typedef message_filters::sync_policies::ApproximateTime<
-        sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::Image> SyncPolicy;
-    typedef message_filters::Synchronizer<SyncPolicy> Synchronizer;
-
-    std::shared_ptr<Synchronizer> sync_;
-
-    // Separate subscribers for pose and JSON
-    ros::Subscriber pose_sub_;
-    ros::Subscriber json_sub_;
-
-    // Latest pose and JSON data
-    geometry_msgs::PoseStamped latest_pose_;
-    std_msgs::String latest_json_;
-    bool pose_received_;
-    bool json_received_;
+    // Simple subscriber for synchronized data
+    ros::Subscriber synced_frame_sub_;
     
     // FM-Fusion components
     fmfusion::Config *global_config_;
@@ -77,7 +55,7 @@ public:
     OnlineMappingNode(ros::NodeHandle& nh, ros::NodeHandle& nh_private)
         : nh_(nh), nh_private_(nh_private), viz_(nh, nh_private),
           frame_count_(0), processed_frame_count_(0),
-          tic_toc_seq_("# Online Mapping", 3), pose_received_(false), json_received_(false)
+          tic_toc_seq_("# Online Mapping", 3)
     {
         // Load parameters
         std::string config_file;
@@ -106,18 +84,8 @@ public:
         
         semantic_mapping_ = new fmfusion::SemanticMapping(global_config_->mapping_cfg, global_config_->instance_cfg);
         
-        // Initialize subscribers
-        rgb_sub_.subscribe(nh_, "/camera/color/image_raw", 1);
-        depth_sub_.subscribe(nh_, "/camera/depth/image_rect_raw", 1);
-        mask_sub_.subscribe(nh_, "/mask_image", 1);
-
-        // Separate subscribers for pose and JSON
-        pose_sub_ = nh_.subscribe("/vins_estimator/camera_pose", 10, &OnlineMappingNode::poseCallback, this);
-        json_sub_ = nh_.subscribe("/mask_data", 10, &OnlineMappingNode::jsonCallback, this);
-
-        // Initialize synchronizer (only for images)
-        sync_.reset(new Synchronizer(SyncPolicy(10), rgb_sub_, depth_sub_, mask_sub_));
-        sync_->registerCallback(boost::bind(&OnlineMappingNode::syncCallback, this, _1, _2, _3));
+        // Initialize subscriber for synchronized data
+        synced_frame_sub_ = nh_.subscribe("/synced_frame", 1, &OnlineMappingNode::syncedFrameCallback, this);
         
         ROS_INFO("OnlineMappingNode initialized. Waiting for synchronized messages...");
     }
@@ -129,34 +97,108 @@ public:
     }
 
 private:
-    void poseCallback(const geometry_msgs::PoseStamped::ConstPtr& msg)
+    void syncedFrameCallback(const sgloop_ros::SyncedFrame::ConstPtr& msg)
     {
-        latest_pose_ = *msg;
-        pose_received_ = true;
+        frame_count_++;
+
+        // Apply frame gap
+        if ((frame_count_ - 1) % frame_gap_ != 0) {
+            return;
+        }
+
+        if (processed_frame_count_ >= max_frames_) {
+            ROS_WARN("Reached maximum frames (%d), stopping processing", max_frames_);
+            return;
+        }
+
+        ROS_INFO("Processing frame %d (total received: %d)...", processed_frame_count_, frame_count_);
+        tic_toc_seq_.tic();
+
+        try {
+            processFrame(msg);
+            processed_frame_count_++;
+        } catch (const std::exception& e) {
+            ROS_ERROR("Error processing frame %d: %s", processed_frame_count_, e.what());
+        }
     }
 
-    void jsonCallback(const std_msgs::String::ConstPtr& msg)
+    void processFrame(const sgloop_ros::SyncedFrame::ConstPtr& msg)
     {
-        latest_json_ = *msg;
-        json_received_ = true;
+        // Convert ROS messages to OpenCV/Open3D format
+        cv_bridge::CvImagePtr rgb_cv = cv_bridge::toCvCopy(msg->rgb, sensor_msgs::image_encodings::RGB8);
+        cv_bridge::CvImagePtr depth_cv = cv_bridge::toCvCopy(msg->depth, sensor_msgs::image_encodings::TYPE_16UC1);
+        cv_bridge::CvImagePtr mask_cv = cv_bridge::toCvCopy(msg->mask, sensor_msgs::image_encodings::MONO8);
+
+        // Convert to Open3D images
+        open3d::geometry::Image color, depth;
+        color.Prepare(rgb_cv->image.cols, rgb_cv->image.rows, 3, 1);
+        depth.Prepare(depth_cv->image.cols, depth_cv->image.rows, 1, 2);
+
+        // Copy data
+        memcpy(color.data_.data(), rgb_cv->image.data, rgb_cv->image.total() * rgb_cv->image.elemSize());
+        memcpy(depth.data_.data(), depth_cv->image.data, depth_cv->image.total() * depth_cv->image.elemSize());
+
+        auto rgbd = open3d::geometry::RGBDImage::CreateFromColorAndDepth(
+            color, depth, global_config_->mapping_cfg.depth_scale, global_config_->mapping_cfg.depth_max, false);
+
+        tic_toc_seq_.toc();
+
+        // Convert pose (format is already consistent with offline version)
+        Eigen::Matrix4d pose = Eigen::Matrix4d::Identity();
+        pose(0, 3) = msg->pose.position.x;
+        pose(1, 3) = msg->pose.position.y;
+        pose(2, 3) = msg->pose.position.z;
+
+        Eigen::Quaterniond q(msg->pose.orientation.w, msg->pose.orientation.x,
+                           msg->pose.orientation.y, msg->pose.orientation.z);
+        pose.block<3, 3>(0, 0) = q.toRotationMatrix();
+
+        // Process SAM detections from JSON
+        std::vector<fmfusion::DetectionPtr> detections;
+        bool detections_loaded = parseJSONDetections(mask_cv->image, msg->json, detections);
+
+        if (!detections_loaded) {
+            ROS_WARN("Failed to process SAM detections for frame %d", processed_frame_count_);
+            // Continue with empty detections
+        } else {
+            ROS_INFO("Processed %zu SAM detections for frame %d", detections.size(), processed_frame_count_);
+        }
+
+        tic_toc_seq_.tic();
+
+        // Integrate into semantic mapping (same as offline version)
+        semantic_mapping_->integrate(processed_frame_count_, rgbd, pose, detections);
+
+        tic_toc_seq_.toc();
+
+        // Visualization
+        if (processed_frame_count_ % 10 == 0) {
+            Visualization::render_semantic_map(
+                semantic_mapping_->export_global_pcd(true, 0.05),
+                semantic_mapping_->export_instance_centroids(0, debug_),
+                semantic_mapping_->export_instance_annotations(0),
+                viz_,
+                LOCAL_AGENT_);
+        }
     }
 
-    bool processSAMDetections(const cv::Mat& mask_image,
-                             const std::string& json_data,
-                             std::vector<fmfusion::DetectionPtr>& detections)
+    bool parseJSONDetections(const cv::Mat& mask_image,
+                           const std::string& json_data,
+                           std::vector<fmfusion::DetectionPtr>& detections)
     {
         try {
-            // Clear previous detections
             detections.clear();
 
-            if (mask_image.empty()) {
-                ROS_WARN("Empty mask image");
+            if (mask_image.empty() || json_data.empty()) {
+                ROS_WARN("Empty mask image or JSON data");
                 return false;
             }
 
-            // For now, create simple detections from mask without JSON parsing
-            // This avoids the jsoncpp version conflict issue
-            // TODO: Fix JSON parsing when jsoncpp version is resolved
+            // Simple JSON parsing without external library
+            // Parse the JSON array format: [{"value": 1, "label": "person", "box": [...], "logit": 0.7}, ...]
+
+            // For now, create detections from mask values and use simple string parsing for labels
+            // This avoids jsoncpp dependency issues
 
             // Find unique mask values (excluding 0 which is background)
             std::set<int> unique_values;
@@ -171,12 +213,13 @@ private:
 
             // Create detection for each unique mask value
             for (int mask_value : unique_values) {
-                // Create detection with proper constructor
                 auto detection = std::make_shared<fmfusion::Detection>(mask_value);
 
-                // Set default label
-                std::string label = "object_" + std::to_string(mask_value);
-                detection->labels_.push_back(std::make_pair(label, 0.8f));
+                // Try to extract label from JSON for this mask value
+                std::string label = extractLabelFromJSON(json_data, mask_value);
+                float confidence = extractConfidenceFromJSON(json_data, mask_value);
+
+                detection->labels_.push_back(std::make_pair(label, confidence));
 
                 // Calculate bounding box from mask
                 cv::Mat instance_mask = (mask_image == mask_value);
@@ -190,110 +233,66 @@ private:
                     detection->bbox_.v1 = bbox.y + bbox.height;
                 }
 
-                // Extract mask for this ID
                 detection->instances_idxs_ = instance_mask.clone();
-
                 detections.push_back(detection);
             }
 
-            ROS_INFO("Created %zu detections from mask", detections.size());
             return true;
 
         } catch (const std::exception& e) {
-            ROS_ERROR("Error processing SAM detections: %s", e.what());
+            ROS_ERROR("Error parsing JSON detections: %s", e.what());
             return false;
         }
     }
 
-    void syncCallback(const sensor_msgs::ImageConstPtr& rgb_msg,
-                     const sensor_msgs::ImageConstPtr& depth_msg,
-                     const sensor_msgs::ImageConstPtr& mask_msg)
+    std::string extractLabelFromJSON(const std::string& json_data, int mask_value)
     {
-        frame_count_++;
+        // Simple string search for the label corresponding to mask_value
+        std::string search_pattern = "\"value\": " + std::to_string(mask_value);
+        size_t pos = json_data.find(search_pattern);
 
-        // Check if we have pose and JSON data
-        if (!pose_received_ || !json_received_) {
-            ROS_WARN("Waiting for pose and JSON data...");
-            return;
-        }
-
-        // Apply frame gap
-        if ((frame_count_ - 1) % frame_gap_ != 0) {
-            return;
-        }
-
-        if (processed_frame_count_ >= max_frames_) {
-            ROS_WARN("Reached maximum frames (%d), stopping processing", max_frames_);
-            return;
-        }
-
-        ROS_INFO("Processing frame %d (total received: %d)...", processed_frame_count_, frame_count_);
-        tic_toc_seq_.tic();
-        
-        try {
-            // Convert ROS messages to OpenCV/Open3D format
-            cv_bridge::CvImagePtr rgb_cv = cv_bridge::toCvCopy(rgb_msg, sensor_msgs::image_encodings::RGB8);
-            cv_bridge::CvImagePtr depth_cv = cv_bridge::toCvCopy(depth_msg, sensor_msgs::image_encodings::TYPE_16UC1);
-            cv_bridge::CvImagePtr mask_cv = cv_bridge::toCvCopy(mask_msg, sensor_msgs::image_encodings::MONO8);
-            
-            // Convert to Open3D images
-            open3d::geometry::Image color, depth;
-            color.Prepare(rgb_cv->image.cols, rgb_cv->image.rows, 3, 1);
-            depth.Prepare(depth_cv->image.cols, depth_cv->image.rows, 1, 2);
-            
-            // Copy data
-            memcpy(color.data_.data(), rgb_cv->image.data, rgb_cv->image.total() * rgb_cv->image.elemSize());
-            memcpy(depth.data_.data(), depth_cv->image.data, depth_cv->image.total() * depth_cv->image.elemSize());
-            
-            auto rgbd = open3d::geometry::RGBDImage::CreateFromColorAndDepth(
-                color, depth, global_config_->mapping_cfg.depth_scale, global_config_->mapping_cfg.depth_max, false);
-            
-            tic_toc_seq_.toc();
-            
-            // Convert pose
-            Eigen::Matrix4d pose = Eigen::Matrix4d::Identity();
-            pose(0, 3) = latest_pose_.pose.position.x;
-            pose(1, 3) = latest_pose_.pose.position.y;
-            pose(2, 3) = latest_pose_.pose.position.z;
-
-            Eigen::Quaterniond q(latest_pose_.pose.orientation.w, latest_pose_.pose.orientation.x,
-                               latest_pose_.pose.orientation.y, latest_pose_.pose.orientation.z);
-            pose.block<3, 3>(0, 0) = q.toRotationMatrix();
-
-            // Process SAM detections
-            std::vector<fmfusion::DetectionPtr> detections;
-            bool detections_loaded = processSAMDetections(mask_cv->image, latest_json_.data, detections);
-
-            if (!detections_loaded) {
-                ROS_WARN("Failed to process SAM detections for frame %d", processed_frame_count_);
-                // Continue with empty detections
-            } else {
-                ROS_INFO("Processed %zu SAM detections for frame %d", detections.size(), processed_frame_count_);
+        if (pos != std::string::npos) {
+            // Look for the label field after the value
+            size_t label_pos = json_data.find("\"label\":", pos);
+            if (label_pos != std::string::npos) {
+                size_t start = json_data.find("\"", label_pos + 8) + 1;
+                size_t end = json_data.find("\"", start);
+                if (start != std::string::npos && end != std::string::npos) {
+                    return json_data.substr(start, end - start);
+                }
             }
-            
-            tic_toc_seq_.tic();
-            
-            // Integrate into semantic mapping
-            semantic_mapping_->integrate(processed_frame_count_, rgbd, pose, detections);
-            
-            tic_toc_seq_.toc();
-            
-            // Visualization
-            if (processed_frame_count_ % 10 == 0) {
-                Visualization::render_semantic_map(
-                    semantic_mapping_->export_global_pcd(true, 0.05),
-                    semantic_mapping_->export_instance_centroids(0, debug_),
-                    semantic_mapping_->export_instance_annotations(0),
-                    viz_,
-                    LOCAL_AGENT_);
-            }
-            
-            processed_frame_count_++;
-            
-        } catch (const std::exception& e) {
-            ROS_ERROR("Error processing frame %d: %s", processed_frame_count_, e.what());
         }
+
+        return "object_" + std::to_string(mask_value);
     }
+
+    float extractConfidenceFromJSON(const std::string& json_data, int mask_value)
+    {
+        // Simple string search for the logit corresponding to mask_value
+        std::string search_pattern = "\"value\": " + std::to_string(mask_value);
+        size_t pos = json_data.find(search_pattern);
+
+        if (pos != std::string::npos) {
+            // Look for the logit field after the value
+            size_t logit_pos = json_data.find("\"logit\":", pos);
+            if (logit_pos != std::string::npos) {
+                size_t start = logit_pos + 8;
+                size_t end = json_data.find_first_of(",}", start);
+                if (end != std::string::npos) {
+                    std::string logit_str = json_data.substr(start, end - start);
+                    try {
+                        return std::stof(logit_str);
+                    } catch (...) {
+                        // Ignore parsing errors
+                    }
+                }
+            }
+        }
+
+        return 0.5f; // Default confidence
+    }
+
+
 
 public:
     void finalize()

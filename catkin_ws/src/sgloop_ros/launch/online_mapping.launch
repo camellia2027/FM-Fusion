@@ -32,12 +32,8 @@
     <param name="debug" value="$(arg debug)"/>
     
     <!-- Topic remapping if needed -->
-    <!-- 
-    <remap from="/camera/color/image_raw" to="/your_rgb_topic"/>
-    <remap from="/camera/depth/image_rect_raw" to="/your_depth_topic"/>
-    <remap from="/mask_image" to="/your_mask_topic"/>
-    <remap from="/vins_estimator/camera_pose" to="/your_pose_topic"/>
-    <remap from="/mask_data" to="/your_json_topic"/>
+    <!--
+    <remap from="/synced_frame" to="/your_synced_frame_topic"/>
     -->
   </node>
 

@@ -28,7 +28,22 @@ find_package(Open3D REQUIRED)
 message(STATUS "FMFUSION LIBRARIES: ${FMFUSION_LIBRARIES}")
 message(STATUS "FMFUSION INCLUDE DIR: ${FMFUSION_INCLUDE_DIR}")
 
-# 
+# Message generation (moved outside conditional block)
+add_message_files(
+  FILES
+  CoarseGraph.msg
+  DenseGraph.msg
+  SyncedFrame.msg
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+  sensor_msgs
+)
+
+#
 if(LOOP_DETECTION)
   set(CMAKE_PREFIX_PATH "/home/cliuci/tools/libtorch")
   find_package(Torch REQUIRED)
@@ -37,17 +52,6 @@ if(LOOP_DETECTION)
   # include_directories("thirdparty/Kimera-RPGO/include")
   message(STATUS "TORCH_LIBRARIES: ${TORCH_LIBRARIES}")
   message(STATUS "TORCH_INCLUDE_DIRS: ${TORCH_INCLUDE_DIRS}")
-  add_message_files(
-    FILES
-    CoarseGraph.msg
-    DenseGraph.msg
-  )
-  
-  generate_messages(
-    DEPENDENCIES
-    std_msgs
-    geometry_msgs
-  )
 endif()
 
 catkin_package(
