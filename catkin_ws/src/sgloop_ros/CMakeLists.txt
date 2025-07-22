@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   tf
   message_generation
+  message_filters
 )
 
 set(FMFUSION_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/../../../build/src/libfmfusion.so)
@@ -51,7 +52,7 @@ endif()
 
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp std_msgs sensor_msgs tf open3d_conversions cv_bridge message_runtime
+  CATKIN_DEPENDS roscpp std_msgs sensor_msgs tf open3d_conversions cv_bridge message_runtime message_filters
   DEPENDS Open3D
 )
 
@@ -101,6 +102,9 @@ target_link_libraries(MappingNode ${ALL_TARGET_LINK_LIBARIES} sgloop_ros)
 
 add_executable(RenderNode src/RenderNode.cpp)
 target_link_libraries(RenderNode ${ALL_TARGET_LINK_LIBARIES} sgloop_ros)
+
+add_executable(OnlineMappingNode src/OnlineMappingNode.cpp)
+target_link_libraries(OnlineMappingNode ${ALL_TARGET_LINK_LIBARIES} sgloop_ros)
 
 if(LOOP_DETECTION)
   add_executable(PoseGraphNode src/PoseGraphNode.cpp)
