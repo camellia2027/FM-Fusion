@@ -1,0 +1,93 @@
+%YAML:1.0
+
+dataset: "your_camera"  # custom config for your specific camera setup
+
+# Camera parameters from your calibration
+# Original resolution: 1280x720
+# Processing resolution: 640x480 (scaled in bag_to_synced_frame.py)
+image_width: 640
+image_height: 480
+
+# Camera intrinsics scaled for 640x480 processing
+# Scale factors: fx_scale = 640/1280 = 0.5, fy_scale = 480/720 = 0.667
+camera_fx: 451.08  # 902.1642456054688 * 0.5
+camera_fy: 600.34  # 900.5171508789062 * 0.667
+camera_cx: 322.26  # 644.5207519531255 * 0.5
+camera_cy: 240.60  # 360.89471435546875 * 0.667
+
+# Distortion parameters (dimensionless, no scaling needed)
+distortion_k1: 9.2615504465028850e-02
+distortion_k2: -1.8082438825995681e-01
+distortion_p1: -6.5484100374765971e-04
+distortion_p2: -3.5829351558557421e-04
+
+# IMU parameters (for reference, though FM-Fusion may not use all of these)
+imu_acc_n: 0.2          # accelerometer measurement noise std dev
+imu_gyr_n: 0.05         # gyroscope measurement noise std dev  
+imu_acc_w: 0.02         # accelerometer bias random work noise std dev
+imu_gyr_w: 4.0e-5       # gyroscope bias random work noise std dev
+gravity_norm: 9.805     # gravity magnitude
+
+Mapping:
+  # Instance segmentation
+  voxel_length: 0.02
+  sdf_trunc: 0.04
+  min_voxel_weight: 0.1 # weight/observation_count
+
+  # Depth processing
+  depth_scale: 1000.0   # depth values are in mm, convert to meters
+  depth_max: 4.0        # maximum depth in meters
+  depth_min: 0.1        # minimum depth in meters
+
+  # Integration parameters
+  integrate_color: true
+  
+  # Mesh extraction
+  mesh_resolution: 0.05
+  
+  # Floor detection
+  floor_height_threshold: 0.1
+  
+  # associations
+  min_det_masks: 100 # pixel-wise
+  min_active_points: 80 # active instances
+  max_box_area_ratio: 0.9 # box_area/image_area
+  query_depth_vx_size: -1.0
+  dilate_kernal: 3 
+  min_iou: 0.3
+  search_radius: 4.0
+
+Instance:
+  # Detection parameters
+  min_detection_confidence: 0.3
+  min_instance_size: 100  # minimum pixels
+  
+  # Tracking
+  max_tracking_distance: 0.5
+  
+  # Merging
+  merge_overlap_threshold: 0.7
+  
+  # Filtering
+  filter_small_instances: true
+  min_instance_volume: 0.001  # cubic meters
+  
+  # Instance association
+  max_association_distance: 0.5
+  min_overlap_ratio: 0.3
+
+# Visualization
+Visualization:
+  enable: true
+  point_size: 2.0
+  
+# Output
+Output:
+  save_mesh: true
+  save_pointcloud: true
+  save_instances: true
+  
+# Performance tuning
+Performance:
+  max_threads: 4
+  use_gpu: false  # set to true if you have CUDA support

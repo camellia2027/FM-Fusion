@@ -2,7 +2,7 @@
 
 dataset: "scannet"  # scannet, fusion_portable, realsense
 
-# camera parameters 
+# camera parameters
 image_width: 640
 image_height: 480
 camera_fx: 557.59
