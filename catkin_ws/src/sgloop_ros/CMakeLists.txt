@@ -110,6 +110,9 @@ target_link_libraries(RenderNode ${ALL_TARGET_LINK_LIBARIES} sgloop_ros)
 add_executable(OnlineMappingNode src/OnlineMappingNode.cpp)
 target_link_libraries(OnlineMappingNode ${ALL_TARGET_LINK_LIBARIES} sgloop_ros)
 
+add_executable(SimpleOnlineMappingNode src/SimpleOnlineMappingNode.cpp)
+target_link_libraries(SimpleOnlineMappingNode ${catkin_LIBRARIES})
+
 if(LOOP_DETECTION)
   add_executable(PoseGraphNode src/PoseGraphNode.cpp)
   target_link_libraries(PoseGraphNode PUBLIC ${ALL_TARGET_LINK_LIBARIES} sgloop_ros)
