@@ -18,10 +18,7 @@ This document explains the different configuration files and their purposes.
 - Includes IMU parameters for reference
 - **Use this for online mapping with your hardware**
 
-### `config/online_mapping.yaml`
-**Purpose**: Alternative online mapping configuration
-- Similar to your_camera.yaml but with different parameter organization
-- Can be used as backup or for different camera setups
+
 
 ## 🎯 When to Use Which Config
 

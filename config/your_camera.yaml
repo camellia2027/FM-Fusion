@@ -1,93 +1,89 @@
 %YAML:1.0
 
-dataset: "your_camera"  # custom config for your specific camera setup
+dataset: "my_camera"
 
-# Camera parameters from your calibration
-# Original resolution: 1280x720
-# Processing resolution: 640x480 (scaled in bag_to_synced_frame.py)
+# 相机参数 - 只需要基本内参
 image_width: 640
 image_height: 480
-
-# Camera intrinsics scaled for 640x480 processing
-# Scale factors: fx_scale = 640/1280 = 0.5, fy_scale = 480/720 = 0.667
-camera_fx: 451.08  # 902.1642456054688 * 0.5
-camera_fy: 600.34  # 900.5171508789062 * 0.667
-camera_cx: 322.26  # 644.5207519531255 * 0.5
-camera_cy: 240.60  # 360.89471435546875 * 0.667
-
-# Distortion parameters (dimensionless, no scaling needed)
-distortion_k1: 9.2615504465028850e-02
-distortion_k2: -1.8082438825995681e-01
-distortion_p1: -6.5484100374765971e-04
-distortion_p2: -3.5829351558557421e-04
-
-# IMU parameters (for reference, though FM-Fusion may not use all of these)
-imu_acc_n: 0.2          # accelerometer measurement noise std dev
-imu_gyr_n: 0.05         # gyroscope measurement noise std dev  
-imu_acc_w: 0.02         # accelerometer bias random work noise std dev
-imu_gyr_w: 4.0e-5       # gyroscope bias random work noise std dev
-gravity_norm: 9.805     # gravity magnitude
+camera_fx: 451.08
+camera_fy: 600.34
+camera_cx: 322.26
+camera_cy: 240.60
 
 Mapping:
-  # Instance segmentation
+  # 实例分割参数
   voxel_length: 0.02
   sdf_trunc: 0.04
-  min_voxel_weight: 0.1 # weight/observation_count
+  min_voxel_weight: 0.1
 
-  # Depth processing
-  depth_scale: 1000.0   # depth values are in mm, convert to meters
-  depth_max: 4.0        # maximum depth in meters
-  depth_min: 0.1        # minimum depth in meters
+  # 深度处理参数
+  depth_scale: 1000.0
+  depth_max: 4.0
 
-  # Integration parameters
-  integrate_color: true
-  
-  # Mesh extraction
-  mesh_resolution: 0.05
-  
-  # Floor detection
-  floor_height_threshold: 0.1
-  
-  # associations
-  min_det_masks: 100 # pixel-wise
-  min_active_points: 80 # active instances
-  max_box_area_ratio: 0.9 # box_area/image_area
+  # 关联参数
+  min_det_masks: 60
+  min_active_points: 50
+  max_box_area_ratio: 0.9
   query_depth_vx_size: -1.0
-  dilate_kernal: 3 
+  dilate_kernal: 2
   min_iou: 0.3
-  search_radius: 4.0
+  search_radius: 3.0
+
+  # 合并参数
+  merge_inflation: 3.0
+  merge_iou: 0.3
+  realtime_merge_floor: 1
+  recent_window_size: 240
+  update_period: 20
+
+  # 贝叶斯融合
+  bayesian_semantic_likelihood: "/home/wuxin/Desktop/FM-Fusion/measurement_model/bayesian_model.txt"
+
+  # 导出参数
+  shape_min_points: 300
+  save_da_dir: ""
 
 Instance:
-  # Detection parameters
+  # 检测参数
   min_detection_confidence: 0.3
-  min_instance_size: 100  # minimum pixels
-  
-  # Tracking
-  max_tracking_distance: 0.5
-  
-  # Merging
-  merge_overlap_threshold: 0.7
-  
-  # Filtering
-  filter_small_instances: true
-  min_instance_volume: 0.001  # cubic meters
-  
-  # Instance association
-  max_association_distance: 0.5
-  min_overlap_ratio: 0.3
+  min_instance_size: 100
 
-# Visualization
-Visualization:
-  enable: true
-  point_size: 2.0
-  
-# Output
-Output:
-  save_mesh: true
-  save_pointcloud: true
-  save_instances: true
-  
-# Performance tuning
-Performance:
-  max_threads: 4
-  use_gpu: false  # set to true if you have CUDA support
+  # 跟踪参数
+  max_tracking_distance: 0.5
+
+  # 合并参数
+  merge_overlap_threshold: 0.7
+
+  # 过滤参数
+  filter_small_instances: true
+  min_instance_volume: 0.001
+
+Graph:
+  edge_radius_ratio: 2.0
+  voxel_size: 0.02
+  involve_floor_edge: 1
+  ignore_labels: "ceiling."
+
+SGNet:
+  triplet_number: 20
+  instance_match_threshold: 0.05
+  warm_up: 10
+
+ShapeEncoder:
+  init_voxel_size: 0.05
+  init_radius: 0.0625
+  padding: "random"
+  K_shape_samples: 768
+  K_match_samples: 96
+
+LoopDetector:
+  fuse_shape: 1
+  lcd_nodes: 3
+  recall_nodes: 2
+
+Registration:
+  noise_bound: 1.0
+
+# 输出设置
+save_da_images: 0
+tmp_dir: "/tmp/my_camera_output"
