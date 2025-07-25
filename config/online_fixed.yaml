@@ -21,16 +21,16 @@ Mapping:
   depth_max: 4.0
 
   # associations
-  min_det_masks: 100 # pixel-wise
-  min_active_points: 80 # active instances
+  min_det_masks: 60 # 调整为在线建图的参数
+  min_active_points: 50 # 调整为在线建图的参数
   max_box_area_ratio: 0.9 # box_area/image_area
   query_depth_vx_size: -1.0
-  dilate_kernal: 3 
+  dilate_kernal: 2 # 调整为在线建图的参数
   min_iou: 0.3
-  search_radius: 4.0
+  search_radius: 3.0 # 调整为在线建图的参数
 
   # merge over-segmentation
-  merge_inflation: 4.0
+  merge_inflation: 3.0 # 调整为在线建图的参数
   merge_iou: 0.3
   realtime_merge_floor: 1
   recent_window_size: 240
@@ -40,7 +40,7 @@ Mapping:
   bayesian_semantic_likelihood: "/home/wuxin/Desktop/FM-Fusion/measurement_model/bayesian_model.txt"
 
   # export
-  shape_min_points: 500 # export and bbox extract
+  shape_min_points: 300 # 调整为在线建图的参数
 
   save_da_dir: "" #"/data2/sgslam/output/da"
 # 
@@ -59,8 +59,8 @@ ShapeEncoder:
   init_voxel_size: 0.05
   init_radius: 0.0625
   padding: "random"
-  K_shape_samples: 1024
-  K_match_samples: 128
+  K_shape_samples: 768 # 调整为在线建图的参数
+  K_match_samples: 96 # 调整为在线建图的参数
 
 LoopDetector:
   fuse_shape: 1 # set to 1 if fuse node feature with shape feature
@@ -72,4 +72,4 @@ Registration:
 
 # output
 save_da_images: 0
-tmp_dir: "/media/lch/SeagateExp/bag/sgslam/output"
+tmp_dir: "/tmp/online_mapping_output"

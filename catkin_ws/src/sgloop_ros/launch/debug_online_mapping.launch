@@ -1,0 +1,12 @@
+<launch>
+  <!-- Debug launch file for online mapping -->
+  
+  <node pkg="sgloop_ros" name="online_mapping_debug" type="OnlineMappingNode" 
+        output="screen" launch-prefix="gdb -ex run --args">
+    <param name="cfg_file" value="/home/wuxin/Desktop/FM-Fusion/config/scannet.yaml"/>
+    <param name="local_agent" value="agent0"/>
+    <param name="output_folder" value="/home/wuxin/Desktop/FM-Fusion/output/online_test"/>
+    <param name="max_frames" value="10"/>
+  </node>
+  
+</launch>

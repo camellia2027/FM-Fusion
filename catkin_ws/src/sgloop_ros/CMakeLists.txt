@@ -23,8 +23,16 @@ find_package(catkin REQUIRED COMPONENTS
 
 set(FMFUSION_LIBRARIES ${CMAKE_CURRENT_SOURCE_DIR}/../../../build/src/libfmfusion.so)
 set(FMFUSION_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../install/include/fmfusion)
-find_package(OpenCV REQUIRED)
+# 强制使用系统OpenCV 4.2，避免版本冲突
+set(OpenCV_DIR "/usr/lib/x86_64-linux-gnu/cmake/opencv4")
+find_package(OpenCV 4.2 REQUIRED PATHS /usr/lib/x86_64-linux-gnu/cmake/opencv4 NO_DEFAULT_PATH)
 find_package(Open3D REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(JSONCPP jsoncpp)
+
+# 强制使用系统版本的jsoncpp
+set(JSONCPP_LIBRARIES "/usr/lib/x86_64-linux-gnu/libjsoncpp.so")
+set(JSONCPP_INCLUDE_DIRS "/usr/include/jsoncpp")
 message(STATUS "FMFUSION LIBRARIES: ${FMFUSION_LIBRARIES}")
 message(STATUS "FMFUSION INCLUDE DIR: ${FMFUSION_INCLUDE_DIR}")
 
@@ -71,6 +79,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${FMFUSION_INCLUDE_DIR}
   ${GTSAM_INCLUDE_DIR}
+  ${JSONCPP_INCLUDE_DIRS}
 )
 
 set(ALL_TARGET_LINK_LIBARIES
@@ -78,6 +87,7 @@ set(ALL_TARGET_LINK_LIBARIES
   Open3D::Open3D
   ${FMFUSION_LIBRARIES}
   ${OpenCV_LIBS}
+  ${JSONCPP_LIBRARIES}
 )
 
 # Build Library
@@ -110,11 +120,8 @@ target_link_libraries(RenderNode ${ALL_TARGET_LINK_LIBARIES} sgloop_ros)
 add_executable(OnlineMappingNode src/OnlineMappingNode.cpp)
 target_link_libraries(OnlineMappingNode ${ALL_TARGET_LINK_LIBARIES} sgloop_ros)
 
-add_executable(SimpleOnlineMappingNode src/SimpleOnlineMappingNode.cpp)
-target_link_libraries(SimpleOnlineMappingNode ${catkin_LIBRARIES})
-
-add_executable(SafeOnlineMappingNode src/SafeOnlineMappingNode.cpp)
-target_link_libraries(SafeOnlineMappingNode ${ALL_TARGET_LINK_LIBARIES} sgloop_ros)
+add_executable(TestOnlineNode src/TestOnlineNode.cpp)
+target_link_libraries(TestOnlineNode ${catkin_LIBRARIES})
 
 if(LOOP_DETECTION)
   add_executable(PoseGraphNode src/PoseGraphNode.cpp)

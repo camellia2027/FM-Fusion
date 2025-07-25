@@ -1,6 +1,6 @@
 %YAML:1.0
 
-dataset: "my_camera"
+dataset: "realsense"
 
 # 相机参数 - 只需要基本内参
 image_width: 640
@@ -42,21 +42,6 @@ Mapping:
   # 导出参数
   shape_min_points: 300
   save_da_dir: ""
-
-Instance:
-  # 检测参数
-  min_detection_confidence: 0.3
-  min_instance_size: 100
-
-  # 跟踪参数
-  max_tracking_distance: 0.5
-
-  # 合并参数
-  merge_overlap_threshold: 0.7
-
-  # 过滤参数
-  filter_small_instances: true
-  min_instance_volume: 0.001
 
 Graph:
   edge_radius_ratio: 2.0
