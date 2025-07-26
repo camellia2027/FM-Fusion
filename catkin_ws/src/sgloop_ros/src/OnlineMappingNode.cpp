@@ -139,6 +139,13 @@ private:
     void syncedFrameCallback(const sgloop_ros::SyncedFrame::ConstPtr& msg)
     {
         if (frame_count_ >= max_frames_) {
+            // 如果是第一次达到最大帧数，保存结果
+            static bool results_saved = false;
+            if (!results_saved) {
+                ROS_INFO("Reached max_frames (%d), saving results...", max_frames_);
+                saveResults();
+                results_saved = true;
+            }
             return;
         }
 
@@ -213,8 +220,40 @@ private:
         // 转换位姿
         Eigen::Matrix4d pose = transformMatrixToPose(msg->transform_matrix);
 
+        // 调试信息
+        ROS_INFO("Frame %d: RGBD size: %dx%d, detections: %zu",
+                 frame_count_, rgbd->color_.width_, rgbd->color_.height_, detections.size());
+
+        // 检查深度数据质量
+        int valid_depth_count = 0;
+        int total_pixels = rgbd->depth_.width_ * rgbd->depth_.height_;
+        for (int v = 0; v < rgbd->depth_.height_; v++) {
+            for (int u = 0; u < rgbd->depth_.width_; u++) {
+                float depth_val = *rgbd->depth_.PointerAt<float>(u, v);
+                if (depth_val > 0.0 && depth_val < 10.0) {  // 合理的深度范围
+                    valid_depth_count++;
+                }
+            }
+        }
+        ROS_INFO("Depth quality: %d/%d valid pixels (%.1f%%)",
+                 valid_depth_count, total_pixels, 100.0 * valid_depth_count / total_pixels);
+
+        // 检查每个检测的掩码大小
+        for (size_t i = 0; i < detections.size(); i++) {
+            int mask_pixels = cv::countNonZero(detections[i]->instances_idxs_);
+            ROS_INFO("Detection %zu (%s): mask has %d pixels",
+                     i, detections[i]->extract_label_string().c_str(), mask_pixels);
+        }
+        ROS_INFO("Pose matrix:\n[%.3f %.3f %.3f %.3f]\n[%.3f %.3f %.3f %.3f]\n[%.3f %.3f %.3f %.3f]\n[%.3f %.3f %.3f %.3f]",
+                 pose(0,0), pose(0,1), pose(0,2), pose(0,3),
+                 pose(1,0), pose(1,1), pose(1,2), pose(1,3),
+                 pose(2,0), pose(2,1), pose(2,2), pose(2,3),
+                 pose(3,0), pose(3,1), pose(3,2), pose(3,3));
+
         // 进行语义建图
+        ROS_INFO("Calling semantic_mapping_->integrate...");
         semantic_mapping_->integrate(frame_count_, rgbd, pose, detections);
+        ROS_INFO("integrate() completed");
         tic_toc_seq_.toc();
 
         // 可视化
@@ -351,12 +390,16 @@ private:
                     cv_mask->encoding = sensor_msgs::image_encodings::MONO8;
 
                     if (cv_temp->image.channels() == 3) {
-                        // 对于BGR图像，使用第一个通道（B通道）作为ID图像
+                        // 对于BGR图像，需要从颜色值映射到检测ID
                         // 注意：OpenCV中BGR顺序是[B,G,R]，第一个通道是B通道
                         std::vector<cv::Mat> channels;
                         cv::split(cv_temp->image, channels);
-                        cv_mask->image = channels[0].clone(); // 使用B通道
-                        ROS_INFO("Using first channel (B) of BGR mask as ID image");
+                        cv::Mat b_channel = channels[0].clone(); // 使用B通道作为原始颜色值
+
+                        // 创建映射后的ID图像
+                        cv_mask->image = cv::Mat::zeros(b_channel.size(), CV_8UC1);
+
+                        ROS_INFO("Converting BGR mask to ID mask using B channel mapping");
                     } else if (cv_temp->image.channels() == 1) {
                         cv_mask->image = cv_temp->image.clone();
                     } else {
@@ -370,6 +413,23 @@ private:
             } catch (cv_bridge::Exception& e) {
                 ROS_ERROR("cv_bridge exception for mask: %s", e.what());
                 return false;
+            }
+
+            // 首先建立BGR颜色值到检测ID的映射（如果是BGR图像）
+            std::map<uchar, int> color_to_id_map;
+            cv::Mat original_b_channel;
+            bool is_bgr_mask = false;
+
+            if (cv_mask && !cv_mask->image.empty()) {
+                // 检查是否是从BGR转换来的（通过检查是否有多个通道的原始图像）
+                cv_bridge::CvImagePtr cv_temp = cv_bridge::toCvCopy(mask_msg);
+                if (cv_temp->image.channels() == 3) {
+                    is_bgr_mask = true;
+                    std::vector<cv::Mat> channels;
+                    cv::split(cv_temp->image, channels);
+                    original_b_channel = channels[0].clone();
+                    ROS_INFO("Building color-to-ID mapping for BGR mask");
+                }
             }
 
             // 解析每个检测对象 - 基于newdata.bag的实际格式
@@ -411,7 +471,44 @@ private:
 
                 // 从掩码图像中提取对应的实例掩码（如果有掩码图像）
                 if (cv_mask && !cv_mask->image.empty()) {
-                    cv::Mat instance_mask = (cv_mask->image == detection_id);
+                    // 调试：检查掩码图像中的实际值
+                    cv::Mat mask_img = cv_mask->image;
+                    std::vector<uchar> unique_values;
+                    for (int v = 0; v < mask_img.rows; v++) {
+                        for (int u = 0; u < mask_img.cols; u++) {
+                            uchar val = mask_img.at<uchar>(v, u);
+                            if (std::find(unique_values.begin(), unique_values.end(), val) == unique_values.end()) {
+                                unique_values.push_back(val);
+                                if (unique_values.size() > 20) break; // 限制输出数量
+                            }
+                        }
+                        if (unique_values.size() > 20) break;
+                    }
+
+                    ROS_INFO("Mask unique values (first 20): ");
+                    for (size_t k = 0; k < std::min(unique_values.size(), size_t(20)); k++) {
+                        ROS_INFO("  %d", (int)unique_values[k]);
+                    }
+                    ROS_INFO("Looking for detection_id: %d", detection_id);
+
+                    cv::Mat instance_mask;
+                    if (is_bgr_mask && !original_b_channel.empty()) {
+                        // 对于BGR掩码，需要从B通道的颜色值映射到检测ID
+                        // 创建实例掩码：找到B通道中对应检测ID的像素
+                        instance_mask = (original_b_channel == detection_id);
+
+                        // 同时更新映射后的ID图像
+                        cv_mask->image.setTo(detection_id, instance_mask);
+
+                        int mask_pixels = cv::countNonZero(instance_mask);
+                        ROS_INFO("Found %d pixels for detection_id %d (BGR mapping)", mask_pixels, detection_id);
+                    } else {
+                        // 对于已经是ID格式的掩码，直接比较
+                        instance_mask = (cv_mask->image == detection_id);
+                        int mask_pixels = cv::countNonZero(instance_mask);
+                        ROS_INFO("Found %d pixels for detection_id %d (direct)", mask_pixels, detection_id);
+                    }
+
                     detection->instances_idxs_ = instance_mask.clone();
 
                     // 如果JSON中没有边界框信息，从掩码中计算
@@ -501,22 +598,46 @@ public:
     void saveResults()
     {
         if (output_folder_.empty()) {
+            ROS_ERROR("Output folder is empty, cannot save results");
             return;
         }
-        
-        ROS_INFO("Saving results to %s", output_folder_.c_str());
-        
+
+        ROS_WARN("Starting to save results to %s", output_folder_.c_str());
+
+        // 检查输出目录是否存在，如果不存在则创建
+        std::string mkdir_cmd = "mkdir -p " + output_folder_;
+        int result = system(mkdir_cmd.c_str());
+        if (result != 0) {
+            ROS_ERROR("Failed to create output directory: %s", output_folder_.c_str());
+            return;
+        }
+        ROS_INFO("Output directory created/verified: %s", output_folder_.c_str());
+
         // 最终处理
+        ROS_INFO("Extracting point cloud...");
         semantic_mapping_->extract_point_cloud();
+        ROS_INFO("Merging floor instances...");
         semantic_mapping_->merge_floor(true);
-        
+
+        // 添加调试信息：检查实例状态
+        ROS_INFO("=== Final Instance Status Debug ===");
+        auto centroids = semantic_mapping_->export_instance_centroids(0, true);
+        ROS_INFO("Total valid instances for export: %zu", centroids.size());
+
         // 保存结果
         std::string sequence_name = "online_mapping";
-        semantic_mapping_->Save(output_folder_ + "/" + sequence_name);
-        tic_toc_seq_.export_data(output_folder_ + "/" + sequence_name + "/time_records.txt");
-        fmfusion::utility::write_config(output_folder_ + "/" + sequence_name + "/config.txt", *global_config_);
-        
-        ROS_INFO("Results saved successfully");
+        std::string full_output_path = output_folder_ + "/" + sequence_name;
+
+        ROS_WARN("Saving semantic mapping to: %s", full_output_path.c_str());
+        semantic_mapping_->Save(full_output_path);
+
+        ROS_INFO("Exporting time records...");
+        tic_toc_seq_.export_data(full_output_path + "/time_records.txt");
+
+        ROS_INFO("Writing config file...");
+        fmfusion::utility::write_config(full_output_path + "/config.txt", *global_config_);
+
+        ROS_WARN("Results saved successfully to: %s", full_output_path.c_str());
     }
 };
 
