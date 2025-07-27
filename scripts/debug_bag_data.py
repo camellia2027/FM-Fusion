@@ -9,7 +9,10 @@ from cv_bridge import CvBridge
 def debug_bag_data():
     """调试bag文件中的数据内容"""
     
-    bag_path = '/home/wuxin/Desktop/FM-Fusion/data/ScanNet/newdata.bag'
+    # Get the script directory and construct relative path
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(script_dir)
+    bag_path = os.path.join(project_root, 'data', 'ScanNet', 'newdata.bag')
     bridge = CvBridge()
     
     print("=== 调试bag文件数据 ===")

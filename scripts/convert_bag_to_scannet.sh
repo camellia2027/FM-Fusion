@@ -2,9 +2,13 @@
 
 # 转换bag文件到ScanNet格式的便捷脚本
 
+# 获取脚本目录并构建相对路径
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
 # 设置路径
-BAG_PATH="/home/wuxin/Desktop/FM-Fusion/data/ScanNet/newdata.bag"
-OUTPUT_DIR="/home/wuxin/Desktop/FM-Fusion/data/ScanNet/scans"
+BAG_PATH="$PROJECT_ROOT/data/ScanNet/newdata.bag"
+OUTPUT_DIR="$PROJECT_ROOT/data/ScanNet/scans"
 SCENE_NAME="scene_from_online_bag"
 
 echo "=== Converting bag file to ScanNet format ==="
@@ -23,7 +27,7 @@ fi
 mkdir -p "$OUTPUT_DIR"
 
 # 运行转换脚本
-cd /home/wuxin/Desktop/FM-Fusion
+cd "$PROJECT_ROOT"
 python3 scripts/bag_to_scannet_format.py "$BAG_PATH" "$OUTPUT_DIR" --scene_name "$SCENE_NAME"
 
 echo

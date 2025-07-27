@@ -74,7 +74,11 @@ public:
         initializeFMFusionGradual();
         
         // 订阅同步帧数据
-        synced_frame_sub_ = nh_.subscribe("/sync/output", 10,
+        // 获取队列大小参数，实时数据建议使用较小的队列
+        int queue_size = 10;
+        nh_private_.param("subscriber_queue_size", queue_size, 10);
+
+        synced_frame_sub_ = nh_.subscribe("/sync/output", queue_size,
                                          &OnlineMappingNode::syncedFrameCallback, this);
         
         ROS_INFO("OnlineMappingNode initialized successfully");
@@ -629,7 +633,42 @@ public:
         std::string full_output_path = output_folder_ + "/" + sequence_name;
 
         ROS_WARN("Saving semantic mapping to: %s", full_output_path.c_str());
-        semantic_mapping_->Save(full_output_path);
+
+        // 创建完整的输出目录
+        std::string mkdir_full_cmd = "mkdir -p " + full_output_path;
+        int mkdir_result = system(mkdir_full_cmd.c_str());
+        if (mkdir_result != 0) {
+            ROS_ERROR("Failed to create full output directory: %s", full_output_path.c_str());
+            return;
+        }
+
+        // 检查实例数量
+        auto centroids_before_save = semantic_mapping_->export_instance_centroids(0, true);
+        ROS_INFO("About to save %zu instances", centroids_before_save.size());
+
+        try {
+            semantic_mapping_->Save(full_output_path);
+            ROS_INFO("semantic_mapping_->Save() completed");
+
+            // 验证保存结果
+            std::string check_cmd = "ls -la " + full_output_path + "/*.ply 2>/dev/null | wc -l";
+            FILE* pipe = popen(check_cmd.c_str(), "r");
+            if (pipe) {
+                char buffer[128];
+                std::string result = "";
+                while (fgets(buffer, sizeof(buffer), pipe) != NULL) {
+                    result += buffer;
+                }
+                pclose(pipe);
+                int ply_count = std::stoi(result);
+                ROS_INFO("Verification: Found %d PLY files in output directory", ply_count);
+                if (ply_count == 0) {
+                    ROS_ERROR("No PLY files were saved! Save operation may have failed silently.");
+                }
+            }
+        } catch (const std::exception& e) {
+            ROS_ERROR("Exception during Save(): %s", e.what());
+        }
 
         ROS_INFO("Exporting time records...");
         tic_toc_seq_.export_data(full_output_path + "/time_records.txt");

@@ -13,14 +13,18 @@ fi
 
 # 启动在线建图节点
 echo "Starting OnlineMappingNode..."
-cd /home/wuxin/Desktop/FM-Fusion/catkin_ws
+# 获取脚本目录并构建相对路径
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+cd "$PROJECT_ROOT/catkin_ws"
 source devel/setup.bash
 
 # 使用较大的max_frames来测试所有帧
 ./devel/lib/sgloop_ros/OnlineMappingNode \
-    _cfg_file:=/home/wuxin/Desktop/FM-Fusion/config/scannet.yaml \
+    _cfg_file:="$PROJECT_ROOT/config/scannet.yaml" \
     _local_agent:=agent0 \
-    _output_folder:=/home/wuxin/Desktop/FM-Fusion/output/slow_test \
+    _output_folder:="$PROJECT_ROOT/output/slow_test" \
     _max_frames:=50 &
 
 MAPPING_PID=$!

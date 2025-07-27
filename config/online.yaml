@@ -22,7 +22,7 @@ Mapping:
 
   # associations
   min_det_masks: 50 # pixel-wise
-  min_active_points: 80 # active instances
+  min_active_points: 20 # active instances (lowered for testing)
   max_box_area_ratio: 0.9 # box_area/image_area
   query_depth_vx_size: -1.0
   dilate_kernal: 3 
@@ -40,7 +40,7 @@ Mapping:
   bayesian_semantic_likelihood: "/home/wuxin/Desktop/FM-Fusion/measurement_model/bayesian_model.txt"
 
   # export
-  shape_min_points: 50 # export and bbox extract
+  shape_min_points: 10 # export and bbox extract (lowered for testing)
 
   save_da_dir: "" #"/data2/sgslam/output/da"
 # 

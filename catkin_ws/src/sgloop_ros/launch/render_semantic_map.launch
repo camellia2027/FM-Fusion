@@ -1,7 +1,7 @@
 <launch>
   <!-- <arg name="result_folder" value="/data2/sample_data/output"/> -->
   <arg name="cfg_file" value="$(find sgloop_ros)/../../../config/scannet.yaml"/>
-  <arg name="result_folder" value="/home/wuxin/Desktop/FM-Fusion/data/ScanNet/output/online_mapping"/>
+  <arg name="result_folder" default="$(find sgloop_ros)/../../../data/ScanNet/output/online_mapping"/>
   <arg name="agentA_scene" value="scene0025_00"/>
 
   <group ns="viz">

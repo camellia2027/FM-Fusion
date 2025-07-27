@@ -1,13 +1,14 @@
 <launch>
-  <!-- Online Semantic Mapping Launch File -->
-  <!-- This launch file starts the online mapping node with visualization support -->
+  <!-- Complete Online Semantic Mapping with Visualization -->
+  <!-- This launch file starts both the online mapping node and RViz visualization -->
   
   <!-- Configuration -->
   <arg name="cfg_file" default="$(find sgloop_ros)/../../../config/online.yaml"/>
   <arg name="output_folder" default="$(find sgloop_ros)/../../../output/online_mapping"/>
-  <arg name="local_agent" default="agent0"/>
+  <arg name="local_agent" default="agentA"/>
   <arg name="max_frames" default="1000"/>
   <arg name="verbose_level" default="0"/>
+  <arg name="enable_rviz" default="true"/>
   
   <!-- Visualization settings -->
   <group ns="viz"> 
@@ -35,7 +36,15 @@
   </node>
 
   <!-- Transform publisher for the agent -->
-  <node pkg="tf" type="static_transform_publisher" name="link_online_agent" 
+  <node pkg="tf" type="static_transform_publisher" name="link_online_agent"
         args="0 0 0 0 0 0 1 world $(arg local_agent) 100" />
+
+  <!-- Additional transform for base_link (needed for RViz) -->
+  <node pkg="tf" type="static_transform_publisher" name="link_base_link"
+        args="0 0 0 0 0 0 1 $(arg local_agent) base_link 100" />
+
+  <!-- RViz Visualization (optional) -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find sgloop_ros)/launch/mapping.rviz"
+        if="$(arg enable_rviz)" />
 
 </launch>

@@ -1,0 +1,57 @@
+<launch>
+  <!-- Real-time Online Mapping Launch File -->
+  <!-- This launch file is optimized for real-time data streams (not bag files) -->
+  
+  <!-- Configuration -->
+  <arg name="cfg_file" default="$(find sgloop_ros)/../../../config/online.yaml"/>
+  <arg name="output_folder" default="$(find sgloop_ros)/../../../output/realtime_mapping"/>
+  <arg name="local_agent" default="agent0"/>
+  <arg name="max_frames" default="0"/>  <!-- 0 = unlimited for real-time -->
+  <arg name="verbose_level" default="0"/>
+  
+  <!-- Real-time optimization parameters -->
+  <arg name="queue_size" default="1"/>  <!-- Small queue for low latency -->
+  <arg name="enable_rviz" default="true"/>
+  
+  <!-- Visualization settings optimized for real-time -->
+  <group ns="viz"> 
+      <param name="edge_width" value="0.02"/>  <!-- Thinner for performance -->
+      <param name="edge_color/r" value="0.0"/>
+      <param name="edge_color/g" value="1.0"/>
+      <param name="edge_color/b" value="1.0"/>
+      <param name="centroid_size" value="0.15"/>  <!-- Smaller for performance -->
+      <param name="centroid_color/r" value="1.0"/>
+      <param name="centroid_color/g" value="0.0"/>
+      <param name="centroid_color/b" value="0.0"/>
+      <param name="annotation_size" value="0.25"/>
+      <param name="centroid_v_offset" value="0.0"/>
+      <param name="annotation_v_offset" value="0.25"/>
+  </group>
+
+  <!-- Online Mapping Node with real-time optimizations -->
+  <node pkg="sgloop_ros" name="$(arg local_agent)" type="OnlineMappingNode" output="screen" clear_params="true">
+    <param name="cfg_file" value="$(arg cfg_file)"/>
+    <param name="output_folder" value="$(arg output_folder)"/>
+    <param name="local_agent" value="$(arg local_agent)"/>
+    <param name="max_frames" value="$(arg max_frames)"/>
+    <param name="visualization" value="1"/>
+    <param name="o3d_verbose_level" value="$(arg verbose_level)"/>
+    
+    <!-- Real-time specific parameters -->
+    <param name="queue_size" value="$(arg queue_size)"/>
+    <rosparam param="subscriber_queue_size">1</rosparam>
+  </node>
+
+  <!-- Transform publisher for the agent -->
+  <node pkg="tf" type="static_transform_publisher" name="link_realtime_agent" 
+        args="0 0 0 0 0 0 1 world $(arg local_agent) 100" />
+
+  <!-- RViz Visualization -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find sgloop_ros)/launch/online_mapping.rviz" 
+        if="$(arg enable_rviz)" />
+
+  <!-- Topic monitoring for debugging -->
+  <node pkg="rostopic" type="rostopic" name="topic_monitor" 
+        args="hz /sync/output" output="screen" />
+
+</launch>

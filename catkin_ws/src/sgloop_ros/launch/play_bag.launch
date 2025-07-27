@@ -1,0 +1,33 @@
+<launch>
+  <!-- Bag File Playback Launch File -->
+  <!-- This launch file plays a ROS bag file for online mapping -->
+  
+  <!-- Configuration -->
+  <arg name="bag_file" default="$(find sgloop_ros)/../../../data/ScanNet/newdata.bag"/>
+  <arg name="rate" default="1.0"/>
+  <arg name="start" default="0"/>
+  <arg name="duration" default=""/>
+  <arg name="loop" default="false"/>
+  <arg name="clock" default="true"/>
+  
+  <!-- Play the bag file -->
+  <node pkg="rosbag" type="play" name="bag_player" output="screen"
+        args="--clock --rate=$(arg rate) --start=$(arg start) $(arg bag_file)"
+        if="$(eval arg('duration') == '' and not arg('loop'))"/>
+        
+  <!-- Play with duration -->
+  <node pkg="rosbag" type="play" name="bag_player" output="screen"
+        args="--clock --rate=$(arg rate) --start=$(arg start) --duration=$(arg duration) $(arg bag_file)"
+        if="$(eval arg('duration') != '' and not arg('loop'))"/>
+        
+  <!-- Play with loop -->
+  <node pkg="rosbag" type="play" name="bag_player" output="screen"
+        args="--clock --rate=$(arg rate) --start=$(arg start) --loop $(arg bag_file)"
+        if="$(eval arg('duration') == '' and arg('loop'))"/>
+        
+  <!-- Play with duration and loop -->
+  <node pkg="rosbag" type="play" name="bag_player" output="screen"
+        args="--clock --rate=$(arg rate) --start=$(arg start) --duration=$(arg duration) --loop $(arg bag_file)"
+        if="$(eval arg('duration') != '' and arg('loop'))"/>
+
+</launch>

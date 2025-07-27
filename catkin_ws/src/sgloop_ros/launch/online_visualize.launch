@@ -1,0 +1,6 @@
+<launch>
+    <!-- Online Mapping Visualization Launch File -->
+    <!-- This launch file starts RViz for visualizing online mapping results -->
+    
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find sgloop_ros)/launch/online_mapping.rviz" />
+</launch>

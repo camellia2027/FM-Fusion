@@ -1,6 +1,9 @@
 <launch>
-  <!-- Online Semantic Mapping Launch File -->
-  <!-- This launch file starts the online mapping node with visualization support -->
+  <!-- Complete Online Mapping System -->
+  <!-- This launch file starts the entire online mapping pipeline: -->
+  <!-- 1. Online mapping node with visualization -->
+  <!-- 2. RViz for real-time visualization -->
+  <!-- 3. Bag file playback (optional) -->
   
   <!-- Configuration -->
   <arg name="cfg_file" default="$(find sgloop_ros)/../../../config/online.yaml"/>
@@ -8,6 +11,15 @@
   <arg name="local_agent" default="agent0"/>
   <arg name="max_frames" default="1000"/>
   <arg name="verbose_level" default="0"/>
+  
+  <!-- Bag playback configuration -->
+  <arg name="play_bag" default="false"/>
+  <arg name="bag_file" default="$(find sgloop_ros)/../../../data/ScanNet/newdata.bag"/>
+  <arg name="bag_rate" default="0.5"/>
+  <arg name="bag_start" default="0"/>
+  
+  <!-- Visualization configuration -->
+  <arg name="enable_rviz" default="true"/>
   
   <!-- Visualization settings -->
   <group ns="viz"> 
@@ -37,5 +49,19 @@
   <!-- Transform publisher for the agent -->
   <node pkg="tf" type="static_transform_publisher" name="link_online_agent" 
         args="0 0 0 0 0 0 1 world $(arg local_agent) 100" />
+
+  <!-- RViz Visualization -->
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find sgloop_ros)/launch/online_mapping.rviz" 
+        if="$(arg enable_rviz)" />
+
+  <!-- Bag File Playback (optional) -->
+  <node pkg="rosbag" type="play" name="bag_player" output="screen"
+        args="--clock --rate=$(arg bag_rate) --start=$(arg bag_start) $(arg bag_file)"
+        if="$(arg play_bag)" />
+
+  <!-- Information -->
+  <node pkg="rostopic" type="rostopic" name="system_info" 
+        args="echo -n 'Online mapping system started. Topics: '; rostopic list | grep -E '(color|depth|mask|detection)' | tr '\n' ' '; echo"
+        output="screen" />
 
 </launch>

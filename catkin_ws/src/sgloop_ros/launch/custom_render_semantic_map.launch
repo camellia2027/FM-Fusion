@@ -1,6 +1,6 @@
 <!-- 创建新文件 catkin_ws/src/sgloop_ros/launch/custom_render_semantic_map.launch -->
 <launch>
-  <arg name="result_folder" default="/home/wuxin/Desktop/FM-Fusion/data/ScanNet/output/online_mapping"/>
+  <arg name="result_folder" default="$(find sgloop_ros)/../../../data/ScanNet/output/online_mapping"/>
   <arg name="cfg_file" default="$(find sgloop_ros)/../../../config/scannet.yaml"/>
   <arg name="agentA_scene" default="scene0025_00"/>
 

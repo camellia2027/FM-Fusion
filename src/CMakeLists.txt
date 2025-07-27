@@ -40,7 +40,25 @@ if (LOOP_DETECTION)
     include(${PROJECT_ROOT_DIR}/cmake/gtsam.cmake)
     include_directories("thirdparty/Kimera-RPGO/include")
     include_directories("thirdparty/extensions")
-    set(CMAKE_PREFIX_PATH "/home/wuxin/tools/libtorch")
+    # Use environment variable or default path for libtorch
+    if(DEFINED ENV{LIBTORCH_PATH})
+        set(CMAKE_PREFIX_PATH "$ENV{LIBTORCH_PATH}")
+    else()
+        # Try common installation paths
+        find_path(LIBTORCH_ROOT
+            NAMES share/cmake/Torch/TorchConfig.cmake
+            PATHS
+                /usr/local/libtorch
+                /opt/libtorch
+                ~/tools/libtorch
+                ${CMAKE_CURRENT_SOURCE_DIR}/../libtorch
+        )
+        if(LIBTORCH_ROOT)
+            set(CMAKE_PREFIX_PATH "${LIBTORCH_ROOT}")
+        else()
+            message(WARNING "LibTorch not found. Please set LIBTORCH_PATH environment variable or install LibTorch to a standard location.")
+        endif()
+    endif()
     set(LIB_UTF8PROC "/usr/local/lib/libutf8proc.so")
 
     add_subdirectory(tokenizer)

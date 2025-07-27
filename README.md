@@ -1,12 +1,18 @@
-source devel/setup.bash && ./devel/lib/sgloop_ros/OnlineMappingNode _cfg_file:=/home/wuxin/Desktop/FM-Fusion/config/scannet.yaml _local_agent:=agent0 _output_folder:=/home/wuxin/Desktop/FM-Fusion/output/online_test_final _max_frames:=45
+source devel/setup.bash && ./devel/lib/sgloop_ros/OnlineMappingNode _cfg_file:=../config/online.yaml _local_agent:=agent0 _output_folder:=../output/online_test_final _max_frames:=45
 
-source devel/setup.bash && ./devel/lib/sgloop_ros/MappingNode _cfg_file:=/home/wuxin/Desktop/FM-Fusion/config/scannet_offline.yaml _max_frames:=4500
+source devel/setup.bash && ./devel/lib/sgloop_ros/MappingNode _cfg_file:=../config/scannet_offline.yaml _max_frames:=4500
 
 source devel/setup.bash && rosbag play ../data/ScanNet/newdata.bag --clock
 
-python3 visualize_results.py --result_dir output/online_test_with_mapping/online_mapping --mode both
+python3 visualize_results.py --result_dir output/online_test_final/online_mapping --mode both
 
-python3 visualize_results.py --result_dir /home/wuxin/Desktop/FM-Fusion/output/offline_original_correct_config/scene0025_00 --mode both
+python3 visualize_results.py --result_dir output/offline_original_correct_config/scene0025_00 --mode both
+
+export LIBGL_ALWAYS_SOFTWARE=true
+source devel/setup.bash
+roslaunch sgloop_ros visualize.launch
+roslaunch sgloop_ros semantic_mapping.launch
+
 ## 目录
 1. [安装](#1-安装)
 2. [数据下载](#2-数据下载)

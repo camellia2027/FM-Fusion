@@ -4,7 +4,10 @@ import zipfile
 
 if __name__=='__main__':
     ############## SET Configurations Here ##############
-    dataroot = '/home/wuxin/Desktop/FM-Fusion/data/ScanNet'
+    # Get the script directory and construct relative path
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(script_dir)
+    dataroot = os.path.join(project_root, 'data', 'ScanNet')
     DELETE_ZIP_FILE = True
     #####################################################
 

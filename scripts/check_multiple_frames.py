@@ -10,7 +10,10 @@ from cv_bridge import CvBridge
 def check_multiple_frames():
     """检查多帧数据的质量"""
     
-    bag_path = '/home/wuxin/Desktop/FM-Fusion/data/ScanNet/newdata.bag'
+    # Get the script directory and construct relative path
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(script_dir)
+    bag_path = os.path.join(project_root, 'data', 'ScanNet', 'newdata.bag')
     bridge = CvBridge()
     
     print("=== 检查多帧掩码数据质量 ===")
