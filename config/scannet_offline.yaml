@@ -1,15 +1,14 @@
 %YAML:1.0
 
-dataset: "realsense"
+dataset: "scannet"  # scannet, fusion_portable, realsense
 
-# 相机参数 - 只需要基本内参
+# camera parameters - 修改为newdata.bag的相机参数
 image_width: 640
 image_height: 480
-camera_fx: 451.08
-camera_fy: 600.34
-camera_cx: 322.26
-camera_cy: 240.60
-
+camera_fx: 557.59
+camera_fy: 578.73
+camera_cx: 318.91
+camera_cy: 242.68
 Mapping:
   # Instance 
   voxel_length: 0.02
@@ -21,7 +20,7 @@ Mapping:
   depth_max: 4.0
 
   # associations
-  min_det_masks: 50 # pixel-wise
+  min_det_masks: 100 # pixel-wise
   min_active_points: 80 # active instances
   max_box_area_ratio: 0.9 # box_area/image_area
   query_depth_vx_size: -1.0
@@ -40,7 +39,7 @@ Mapping:
   bayesian_semantic_likelihood: "/home/wuxin/Desktop/FM-Fusion/measurement_model/bayesian_model.txt"
 
   # export
-  shape_min_points: 50 # export and bbox extract
+  shape_min_points: 500 # export and bbox extract
 
   save_da_dir: "" #"/data2/sgslam/output/da"
 # 

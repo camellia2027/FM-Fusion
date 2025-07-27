@@ -5,7 +5,7 @@
   <!-- <arg name="sequence_name" default="ab0201_03a"/> -->
 
   <!-- global settings  -->
-  <arg name="cfg_file" value="$(find sgloop_ros)/../../../config/scannet.yaml"/>
+  <arg name="cfg_file" value="/home/wuxin/Desktop/FM-Fusion/config/scannet_offline.yaml"/>
   <arg name="verbose_level" value="0"/>
   <arg name="output_folder" value="$(arg dataroot)/output/online_mapping"/>
 
@@ -30,7 +30,7 @@
     <param name="local_agent" value="agentA"/>
     <!-- <param name="association_name" value="data_association.txt"/> -->
     <param name="association_name" value=""/>
-    <param name="max_frames" value="500"/>
+    <param name="max_frames" value="2000"/>
     <param name="frame_gap" value="5"/>
     <param name="visualization" value="1"/>
     <param name="o3d_verbose_level" value="$(arg verbose_level)"/>
